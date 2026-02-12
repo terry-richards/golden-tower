@@ -1,0 +1,29 @@
+=== Dimensional Analysis: bottom_segment ===
+
+Bounding Box:
+  X: -80.0 to 92.5 (172.5 mm)
+  Y: -82.8 to 80.0 (162.8 mm)
+  Z: -21.1 to 220.7 (241.8 mm)
+
+Volume: 367960 mm³ (368.0 cm³)
+Surface Area: 268581 mm²
+Watertight: True
+Winding Consistent: True
+Faces: 7962, Vertices: 3983
+
+Fill ratio vs 160.0mm × 200.0mm cylinder: 9.2%
+
+Dimensional Checks:
+  Expected outer diameter: 160 mm
+  Actual XY span: 172.5 mm
+  Delta: +12.5 mm (pockets protrude — expected)
+
+  Expected height: ~200 mm (+10mm interlock)
+  Actual Z span: 241.8 mm
+
+Cross-section areas (solid area at each Z height):
+  Z=3.1mm (10%): 18439.6 mm²
+  Z=39.4mm (25%): 1002.9 mm²
+  Z=99.8mm (50%): 1059.1 mm²
+  Z=160.2mm (75%): 1013.1 mm²
+  Z=196.5mm (90%): 994.5 mm²

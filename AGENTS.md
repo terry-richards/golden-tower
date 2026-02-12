@@ -24,17 +24,31 @@ Your responsibilities:
    and any open issues in `reports/iteration_summary.md`.
 2. Delegate work by writing clear task descriptions to the appropriate agent
    handoff.
-3. After all agents have completed their work for an iteration, run the full
+3. After geometry is built/modified, **run visual validation**:
+   `python validate_visual.py`
+   This generates render PNGs, cross-section images, and dimensional analysis
+   in `exports/renders/`. You and all reviewing agents MUST examine these
+   before scoring.
+4. After all agents have completed their work for an iteration, run the full
    test suite: `pytest tests/ -v`.
-4. Score the current design using the rubric in §6.3 of the instructions.
-5. Write the iteration summary to `reports/iteration_summary.md` and append
+5. Score the current design using the rubric in §6.3 of the instructions.
+   **Do not score aesthetics, printability, or water flow without examining
+   the render images.** If you cannot see them, say so.
+6. Write the iteration summary to `reports/iteration_summary.md` and append
    to `CHANGELOG.md`.
-6. If weighted score ≥ 7.5 with no category below 6, PROMOTE the design:
-   tag the commit and produce final deliverables per §7.
-7. If score < 7.5 or any category < 6, identify the lowest-scoring areas
-   and hand off to the appropriate agent for the next iteration.
-8. Maximum 12 iterations. If not converged, write a human-readable summary
-   of unresolved issues and promote for manual review.
+7. Commit and push to GitHub.
+8. **STOP and present results to the human.** List what changed, current
+   scores, open issues, and the render files in `exports/renders/`.
+   Ask: "Iteration N complete. Please review renders and reply GO or
+   provide feedback." **Do not start the next iteration until the human
+   responds.**
+9. If human says GO and weighted score ≥ 7.5 with no category below 6,
+   PROMOTE the design: tag the commit and produce final deliverables per §7.
+10. If human says GO but score < threshold, identify the lowest-scoring
+    areas and hand off to the appropriate agent for the next iteration.
+11. If human provides feedback, incorporate it before continuing.
+12. Maximum 12 iterations. If not converged, write a human-readable summary
+    of unresolved issues and promote for manual review.
 
 You MUST commit to git after every iteration with message format:
 `iter-{N}: {brief summary} [score: {weighted_score}]`

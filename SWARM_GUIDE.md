@@ -7,9 +7,10 @@ When entering Claude swarm mode, use this prompt:
 ---
 
 ```
-You are the orchestrator of a zero-human autonomous design shop building the
+You are the orchestrator of a human-in-the-loop design shop building the
 "Golden Tower" — a modular, 3D-printable hydroponic grow tower where planting
-pockets spiral upward following the golden angle (137.508°).
+pockets spiral upward following the golden angle (137.508°). After each iteration
+you MUST pause and present results for human review before continuing.
 
 Read these files IN ORDER before doing anything else:
 1. .copilot-instructions.md — Full product spec, constraints, and protocols
@@ -36,12 +37,20 @@ using build123d. The architect should study the reference STL
 (3-Way_Planting_Module_custom.stl) to understand the integrated tube and drip
 tray geometry before designing.
 
-After geometry exists, run the engineering, print, and aesthetic reviews in
-parallel, then score and decide whether to iterate or promote.
+After geometry exists, run visual validation (`python validate_visual.py`) to
+generate render PNGs and cross-section analysis in `exports/renders/`. Then run
+the engineering, print, and aesthetic reviews in parallel — all reviewing agents
+MUST examine the rendered images before scoring. Do not score aesthetics,
+printability, or water flow without looking at the renders.
 
-Work autonomously. Do not ask for human input. Iterate until the weighted score
-reaches 7.5/10 with no category below 6, or until you hit 12 iterations.
-Commit and push to GitHub after every iteration.
+After scoring, commit and push to GitHub. Then STOP and present results to the
+human: what changed, current scores, open issues, and the render files in
+`exports/renders/`. Ask the human to reply GO or provide feedback.
+
+**Do not start the next iteration until the human responds.** This is not
+autonomous — each iteration requires explicit human approval. Iterate until the
+weighted score reaches 7.5/10 with no category below 6, or until you hit 12
+iterations.
 
 The workspace is at /home/tmr/src/learn/golden-tower/ with build123d installed
 in ./venv/. Run `source venv/bin/activate` before any Python commands.
@@ -113,16 +122,21 @@ new engineer) would onboard:
    https://github.com/terry-richards/golden-tower. The swarm pushes
    after every iteration commit: `git push origin main`.
 
-2. **Monitor the changelog**: `CHANGELOG.md` is the human-readable audit trail.
+2. **Review renders after each iteration**: The swarm will pause after each
+   iteration and ask for GO/NO-GO. Look at the PNG files in `exports/renders/`
+   — these show orthographic views and cross-sections. This is your primary
+   mechanism for catching design errors early.
+
+3. **Monitor the changelog**: `CHANGELOG.md` is the human-readable audit trail.
    Check it to see what the swarm decided at each iteration.
 
-3. **Intervene via reports**: If you want to nudge the swarm, edit
+4. **Intervene via reports**: If you want to nudge the swarm, edit
    `reports/iteration_summary.md` and add a BLOCKER issue. The orchestrator
    will route it to the appropriate agent.
 
-4. **Adjust parameters**: If the swarm converges on something you don't like,
+5. **Adjust parameters**: If the swarm converges on something you don't like,
    modify `tower_params.py` directly and reset the iteration counter.
 
-5. **Scale up**: To add more agents (e.g., a "botanist" that optimizes pocket
+6. **Scale up**: To add more agents (e.g., a "botanist" that optimizes pocket
    angles for specific plants), add a new section to `AGENTS.md` and reference
    it from the orchestrator's handoff list.
