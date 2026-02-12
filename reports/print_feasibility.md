@@ -1,29 +1,104 @@
-# Print Feasibility Report
+# [Print] Print Feasibility Report — Iteration 1
 
-## Status: PENDING
+## Status: COMPLETE
 
-*This report is populated by the Print Agent after each iteration.*
+**Reviewer**: Print Agent
+**Iteration**: 1 (initial geometry)
+**Date**: 2026-02-12
 
-## Checklist
+---
 
-- [ ] All parts fit within 256×256×256mm build volume
-- [ ] No overhangs > 55° from vertical
-- [ ] No bridge spans > 40mm
-- [ ] All meshes manifold and watertight
-- [ ] Print time estimated per component
-- [ ] Material usage estimated per component
-- [ ] Slicer profiles written to slicer/profiles/
+## 1. Build Volume Fit
 
-## Component Analysis
+Target printer: **Bambu Lab P1S** (256 x 256 x 256 mm)
 
-| Component | Fits Volume | Max Overhang | Max Bridge | Manifold | Est. Time | Est. Material |
-|-----------|-------------|--------------|------------|----------|-----------|---------------|
-| — | — | — | — | — | — | — |
+| Component | X (mm) | Y (mm) | Z (mm) | Fits? | Margin |
+|-----------|--------|--------|--------|-------|--------|
+| Standard Segment | 172.5 | 160.3 | 241.8 | YES | 14.2mm Z |
+| Bottom Segment | 172.5 | 160.0 | 241.8 | YES | 14.2mm Z |
+| Top Cap | 180.0 | 179.9 | 25.8 | YES | 76mm XY |
 
-## Findings
+The segment Z extent of 241.8mm includes pocket protrusions extending below and above the base body. The male interlock adds 10mm above the 200mm body, and tilted pocket protrusions extend ~21mm below and ~21mm above the interlock connection plane. All components fit within the 256mm build volume.
 
-| # | Severity | Component | Issue | Suggested Fix |
-|---|----------|-----------|-------|---------------|
-| — | — | — | *No geometry to review yet* | — |
+## 2. Overhang Analysis
 
-## Score: —/10
+| Feature | Angle from Vertical | Max Limit | Needs Support? |
+|---------|-------------------|-----------|----------------|
+| Outer cylinder wall | 0 deg | 55 deg | No |
+| Pocket tilt | 20 deg | 55 deg | No |
+| Pocket interior ceiling | ~20 deg | 55 deg | No |
+| Female interlock bore ceiling | 90 deg (horizontal) | 55 deg | Bridging (13.3mm) |
+| Supply tube bore | 0 deg | 55 deg | No |
+| Male ring to outer wall step | 90 deg (horizontal) | 55 deg | **51mm overhang** |
+
+### Critical Features
+
+1. **Male ring to outer wall step**: At the top of each segment, the outer cylinder (r=80mm) terminates and the male ring (r=29mm) continues upward. This creates a 51mm inward horizontal step. When printing upright, this is a ceiling overhang that exceeds the 40mm bridge limit.
+
+2. **Female interlock bore**: The annular pocket at the segment base (r=16mm to r=29.3mm) is a 13.3mm wide horizontal ceiling. Within the 40mm bridge limit -- self-supporting with bridging.
+
+3. **Pocket interiors**: The pocket bores are tilted 20 deg from vertical. The upper surface of each tilted pocket creates a local overhang of ~20 deg from vertical. Well within the 55 deg limit.
+
+## 3. Support Requirements
+
+| Feature | Support Needed? | Assessment |
+|---------|----------------|------------|
+| Female interlock bore | No (bridge) | 13.3mm span -- within 40mm bridge limit |
+| Pocket interiors | No | 20 deg tilt self-supporting |
+| Male ring step (top) | **YES** | 51mm horizontal step exceeds 40mm bridge limit |
+| QD barb ridges | No | Small cones, self-supporting |
+| Bayonet lugs | No | Printed on build plate |
+
+### Recommendations
+
+**Option A**: Print segments upside-down (male ring on bed). This eliminates the large overhang but places the female bore on top (open cavity, no support needed).
+
+**Option B**: Add a chamfered/tapered transition from the outer wall to the male ring. A 55 deg chamfer from r=80 at z=SEGMENT_HEIGHT to r=29 at z=SEGMENT_HEIGHT+INTERLOCK_HEIGHT would make the feature self-supporting.
+
+**Option C**: Accept supports at the male ring step. Clean-up required but functionally acceptable.
+
+## 4. Material Estimate
+
+Material: PETG (density 1.27 g/cm3), 15% infill general areas, 100% walls.
+
+| Component | Mesh Volume (cm3) | Est. Print Mass (g) | Qty/Tower | Total (g) |
+|-----------|-------------------|---------------------|-----------|-----------|
+| Standard Segment | 373.1 | ~210 | 7 | 1,470 |
+| Bottom Segment | 370.5 | ~208 | 1 | 208 |
+| Top Cap | 71.0 | ~65 | 1 | 65 |
+| **TOTAL** | | | **9 parts** | **~1,743g** |
+
+Note: Printed mass is less than mesh volume x density because infill < 100%. Estimate assumes ~55% fill factor (perimeters + 15% infill + top/bottom solid layers).
+
+**Filament requirement**: ~1.75 kg = approximately 2 standard 1kg spools of PETG.
+
+## 5. Print Time Estimate
+
+Settings: 0.2mm layer height, 60mm/s average, Bambu Lab P1S.
+
+| Component | Height (mm) | Est. Time (hrs) |
+|-----------|-------------|-----------------|
+| Standard Segment | 242 | 8-12 |
+| Bottom Segment | 242 | 8-12 |
+| Top Cap | 26 | 1-2 |
+| **Full tower (9 parts)** | | **~65-90 hours** |
+
+## 6. Issues Summary
+
+| # | Severity | Component | Issue |
+|---|----------|-----------|-------|
+| P1 | MAJOR | Segment | Top overhang from r=80 to r=29 at male ring creates 51mm horizontal step exceeding 40mm bridge limit. Needs chamfer, support, or inverted print orientation. |
+| P2 | MINOR | All | Z height 241.8mm leaves only 14.2mm margin in 256mm build volume |
+| P3 | MINOR | Bottom seg | QD barb below z=0 adds to total print height |
+
+## Score
+
+| Category | Score | Weight | Weighted |
+|----------|-------|--------|----------|
+| Printability | 6/10 | 20% | 1.20 |
+
+Score reflects: all parts fit build volume (good), all meshes watertight (good), most features self-supporting (good), but major overhang at male ring step needs resolution (drops score).
+
+---
+
+*Report generated by Print Agent -- Golden Tower autonomous design swarm.*
