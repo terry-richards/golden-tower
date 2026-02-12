@@ -1,17 +1,17 @@
 """
-Interlock Mechanism — Golden Tower
-===================================
-Male/female interlock geometry that:
-- Enforces correct 52.524° rotational offset between segments
-- Cannot be assembled at the wrong angle
-- Provides splash-resistant seal (O-ring groove)
+Interlock System — Golden Tower (Blender)
+==========================================
+Run: blender --background --python components/interlock.py
 
-Note: For iteration 1, interlock geometry is built inline within
-segment.py. This module provides standalone interlock parts for
-testing and visualization purposes.
+Implements the male/female interlock mechanism:
+- Male interlock: protruding ring with alignment key at top of each segment
+- Female interlock: receiving groove with keyway at bottom of each segment
+- Alignment key enforces correct 52.524° rotational offset between segments
+- Engagement depth per tower_params.INTERLOCK_DEPTH
 """
 
-from build123d import *
+import bpy
+import bmesh
 import math
 import os
 import sys
@@ -19,85 +19,66 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from tower_params import *
 
-# Interlock ring dimensions
-MALE_RING_OR = 29.0  # mm
-FEMALE_BORE_IR = SUPPLY_TUBE_OD / 2  # 16 mm
-FEMALE_BORE_OR = MALE_RING_OR + INTERLOCK_CLEARANCE  # 29.3 mm
+
+def clear_scene():
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete()
 
 
-def build_male_interlock() -> Part:
-    """Build the male (top) interlock ring for a segment."""
-    with BuildPart() as male:
-        # Main ring
-        Cylinder(
-            radius=MALE_RING_OR,
-            height=INTERLOCK_HEIGHT,
-            align=(Align.CENTER, Align.CENTER, Align.MIN),
-        )
-        # Supply tube wall
-        Cylinder(
-            radius=SUPPLY_TUBE_OD / 2,
-            height=INTERLOCK_HEIGHT,
-            align=(Align.CENTER, Align.CENTER, Align.MIN),
-        )
-        # Central tube bore
-        Cylinder(
-            radius=SUPPLY_TUBE_ID / 2,
-            height=INTERLOCK_HEIGHT,
-            align=(Align.CENTER, Align.CENTER, Align.MIN),
-            mode=Mode.SUBTRACT,
-        )
-        # Alignment key tab
-        key_x = MALE_RING_OR + INTERLOCK_KEY_DEPTH / 2
-        with Locations([Pos(key_x, 0, INTERLOCK_HEIGHT / 2)]):
-            Box(
-                INTERLOCK_KEY_DEPTH,
-                INTERLOCK_KEY_WIDTH,
-                INTERLOCK_HEIGHT,
-                align=(Align.CENTER, Align.CENTER, Align.CENTER),
-            )
-    return male.part
+def build_male_interlock():
+    """Build the male interlock ring with alignment key.
+
+    Returns:
+        bpy.types.Object: The male interlock mesh object.
+    """
+    raise NotImplementedError(
+        "Architect agent: implement male interlock geometry using bpy/bmesh. "
+        "See .copilot-instructions.md §9 for Blender design patterns."
+    )
 
 
-def build_female_interlock() -> Part:
-    """Build the female (bottom) interlock socket for a segment."""
-    with BuildPart() as female:
-        # Outer ring representing the segment base material
-        Cylinder(
-            radius=FEMALE_BORE_OR + WALL_THICKNESS * 3,
-            height=INTERLOCK_HEIGHT,
-            align=(Align.CENTER, Align.CENTER, Align.MIN),
-        )
-        # Bore for male ring
-        with BuildSketch(Plane.XY):
-            Circle(radius=FEMALE_BORE_OR)
-            Circle(radius=FEMALE_BORE_IR, mode=Mode.SUBTRACT)
-        extrude(amount=INTERLOCK_HEIGHT, mode=Mode.SUBTRACT)
-        # Key slot
-        slot_x = FEMALE_BORE_OR + INTERLOCK_KEY_DEPTH / 2
-        with Locations([Pos(slot_x, 0, INTERLOCK_HEIGHT / 2)]):
-            Box(
-                INTERLOCK_KEY_DEPTH + INTERLOCK_CLEARANCE * 2,
-                INTERLOCK_KEY_WIDTH + INTERLOCK_CLEARANCE * 2,
-                INTERLOCK_HEIGHT,
-                align=(Align.CENTER, Align.CENTER, Align.CENTER),
-                mode=Mode.SUBTRACT,
-            )
-        # Central tube bore
-        Cylinder(
-            radius=SUPPLY_TUBE_ID / 2,
-            height=INTERLOCK_HEIGHT,
-            align=(Align.CENTER, Align.CENTER, Align.MIN),
-            mode=Mode.SUBTRACT,
-        )
-    return female.part
+def build_female_interlock():
+    """Build the female interlock groove with keyway.
+
+    Returns:
+        bpy.types.Object: The female interlock mesh object.
+    """
+    raise NotImplementedError(
+        "Architect agent: implement female interlock geometry using bpy/bmesh. "
+        "See .copilot-instructions.md §9 for Blender design patterns."
+    )
 
 
-if __name__ == "__main__":
+def export_interlock(male_obj, female_obj):
+    stl_dir = os.path.join(os.path.dirname(__file__), '..', 'exports', 'stl')
+    blend_dir = os.path.join(os.path.dirname(__file__), '..', 'exports', 'blend')
+    os.makedirs(stl_dir, exist_ok=True)
+    os.makedirs(blend_dir, exist_ok=True)
+
+    # Export male
+    bpy.ops.object.select_all(action='DESELECT')
+    male_obj.select_set(True)
+    bpy.context.view_layer.objects.active = male_obj
+    stl_path = os.path.join(stl_dir, 'interlock_male.stl')
+    bpy.ops.wm.stl_export(filepath=stl_path, export_selected_objects=True)
+    print(f'Exported STL: {stl_path}')
+
+    # Export female
+    bpy.ops.object.select_all(action='DESELECT')
+    female_obj.select_set(True)
+    bpy.context.view_layer.objects.active = female_obj
+    stl_path = os.path.join(stl_dir, 'interlock_female.stl')
+    bpy.ops.wm.stl_export(filepath=stl_path, export_selected_objects=True)
+    print(f'Exported STL: {stl_path}')
+
+    # Save .blend with both
+    blend_path = os.path.join(blend_dir, 'interlock.blend')
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(blend_path))
+    print(f'Saved .blend: {blend_path}')
+
+
+if __name__ == '__main__':
+    clear_scene()
     male = build_male_interlock()
     female = build_female_interlock()
-    stl_dir = os.path.join(os.path.dirname(__file__), '..', 'exports', 'stl')
-    export_stl(male, os.path.join(stl_dir, 'interlock_male.stl'))
-    export_stl(female, os.path.join(stl_dir, 'interlock_female.stl'))
-    print(f"Male interlock volume: {male.volume:.1f} mm³")
-    print(f"Female interlock volume: {female.volume:.1f} mm³")
+    export_interlock(male, female)

@@ -25,10 +25,10 @@ Your responsibilities:
 2. Delegate work by writing clear task descriptions to the appropriate agent
    handoff.
 3. After geometry is built/modified, **run visual validation**:
-   `python validate_visual.py`
-   This generates render PNGs, cross-section images, and dimensional analysis
-   in `exports/renders/`. You and all reviewing agents MUST examine these
-   before scoring.
+   `blender --background --python validate_visual.py`
+   This generates rendered PNGs, cross-section images, and dimensional analysis
+   in `exports/renders/`. These are real EEVEE renders — not wireframes.
+   You and all reviewing agents MUST examine these before scoring.
 4. After all agents have completed their work for an iteration, run the full
    test suite: `pytest tests/ -v`.
 5. Score the current design using the rubric in §6.3 of the instructions.
@@ -85,7 +85,7 @@ You have **expert-level knowledge of hydroponic growing systems**, including:
 
 Your responsibilities:
 1. Maintain `tower_params.py` as the single source of truth for all dimensions.
-2. Write and modify the build123d scripts in `components/` and `build_tower.py`.
+2. Write and modify Blender Python scripts (`bpy`) in `components/` and `build_tower.py`.
 3. Ensure the golden angle (137.508°) is mathematically exact in all node
    placements.
 4. **Each segment's 3 pockets must spiral UPWARD at different heights** within
@@ -101,7 +101,8 @@ Your responsibilities:
 8. Design the interlock mechanism that enforces correct rotational alignment.
 9. When you receive feedback from other agents, modify the parametric model
    to address their concerns while preserving golden-angle accuracy.
-10. Export STL and STEP files to `exports/` after every design change.
+10. Export STL files to `exports/stl/` and save .blend files to `exports/blend/`
+    after every design change.
 11. All geometry must be created parametrically — never hard-code coordinates.
 12. Maintain segment height:width ratio ≥ 1.0 (target ~1.25) for pleasing
     upward sweep.
@@ -115,7 +116,8 @@ Key design constraints:
 - Clean, smooth outer body between pocket protrusions
 - All parts must be printable without supports
 
-Use build123d (already installed in venv). Visualize with `ocp_vscode.show()`.
+Run component scripts with: `blender --background --python components/script.py`
+Save .blend files alongside STLs for debugging in Blender GUI.
 
 **Handoffs**: orchestrator
 
@@ -144,6 +146,7 @@ Your responsibilities:
    for any issues found.
 
 Use trimesh and numpy for analysis. Load STLs from `exports/stl/`.
+Open .blend files from `exports/blend/` in Blender GUI for visual inspection.
 
 **Handoffs**: orchestrator
 
@@ -170,8 +173,9 @@ Your responsibilities:
 
 Target material: PETG or ASA. Target printer: Bambu Lab P1S or equivalent.
 
-Use trimesh for mesh analysis. If slicer CLI is available, use it for
-time/material estimates.
+Use trimesh for mesh analysis. Use Blender's `bpy.ops.mesh.bisect` for
+cross-section analysis of overhang angles. If slicer CLI is available, use
+it for time/material estimates.
 
 **Handoffs**: orchestrator
 

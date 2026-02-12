@@ -9,8 +9,16 @@ artichokes.
 
 ```bash
 cd /home/tmr/src/learn/golden-tower
+
+# Build all components (Blender headless)
+blender --background --python build_tower.py
+
+# Validate meshes (standalone Python)
 source venv/bin/activate
-python build_tower.py
+python build_tower.py --validate-only
+
+# Generate visual validation renders
+blender --background --python validate_visual.py
 ```
 
 ## Architecture
@@ -35,11 +43,13 @@ it's the same strategy plants evolved over millions of years.
 | Path | Purpose |
 |---|---|
 | `tower_params.py` | All parametric dimensions (single source of truth) |
-| `build_tower.py` | Main build script — generates all components |
-| `components/` | Individual component build123d scripts |
+| `build_tower.py` | Main build script (run with `blender --background --python`) |
+| `validate_visual.py` | EEVEE render + cross-section + analysis pipeline |
+| `components/` | Individual component Blender Python scripts |
 | `tests/` | Automated geometry, print, and assembly tests |
 | `exports/stl/` | Exported STL files for printing |
-| `exports/step/` | Exported STEP files for CAD interchange |
+| `exports/blend/` | Blender .blend files for GUI debugging |
+| `exports/renders/` | Rendered PNGs (multi-view, cross-sections) |
 | `reports/` | Agent review reports per iteration |
 | `slicer/profiles/` | Recommended slicer configurations |
 
@@ -67,4 +77,4 @@ it's the same strategy plants evolved over millions of years.
 
 ## License
 
-Proprietary — designed by autonomous agent swarm.
+Proprietary — designed by human-in-the-loop agent swarm using Blender 5.0.

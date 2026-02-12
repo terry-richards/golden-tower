@@ -30,27 +30,18 @@ KEY DESIGN DECISIONS already made — do not revisit:
 - Pocket protrusions extending beyond the outer cylinder are expected and integral
 - The architect has hydroponic systems expertise (NFT, root zone, drainage, etc.)
 
-CAD ENGINE: Blender 5.0 with Python (bpy/bmesh). All geometry is created via
-Blender Python scripts run headlessly: `blender --background --python script.py`.
-The 3D Print Toolkit addon is NOT available — use BMesh for manifold checks and
-bpy.ops.mesh.bisect for cross-sections. EEVEE is the render engine (engine name:
-'BLENDER_EEVEE'). Do NOT use 'BLENDER_EEVEE_NEXT' — it does not exist in 5.0.
-
 Begin Iteration 1: hand off to the architect to generate the first complete
 parametric geometry for all components (standard segment with integrated tube
 and drip tray, top cap, bottom segment with QD fitting, interlock mechanism)
-using Blender Python (bpy/bmesh). The architect should study the reference STL
+using build123d. The architect should study the reference STL
 (3-Way_Planting_Module_custom.stl) to understand the integrated tube and drip
-tray geometry before designing — import it with bpy.ops.wm.stl_import() and
-cross-section it with bpy.ops.mesh.bisect at multiple Z-heights.
+tray geometry before designing.
 
-After geometry exists, run visual validation:
-  blender --background --python validate_visual.py
-This generates EEVEE rendered PNGs and cross-section analysis in
-`exports/renders/`. Then run the engineering, print, and aesthetic reviews in
-parallel — all reviewing agents MUST examine the rendered images before scoring.
-Do not score aesthetics, printability, or water flow without looking at the
-renders.
+After geometry exists, run visual validation (`python validate_visual.py`) to
+generate render PNGs and cross-section analysis in `exports/renders/`. Then run
+the engineering, print, and aesthetic reviews in parallel — all reviewing agents
+MUST examine the rendered images before scoring. Do not score aesthetics,
+printability, or water flow without looking at the renders.
 
 After scoring, commit and push to GitHub. Then STOP and present results to the
 human: what changed, current scores, open issues, and the render files in
@@ -61,11 +52,8 @@ autonomous — each iteration requires explicit human approval. Iterate until th
 weighted score reaches 7.5/10 with no category below 6, or until you hit 12
 iterations.
 
-The workspace is at /home/tmr/src/learn/golden-tower/.
-Blender: /snap/bin/blender (version 5.0.1, headless via --background)
-Standalone Python: ./venv/ (has trimesh, pytest, numpy — for tests/analysis)
-  Run `source venv/bin/activate` before pytest or trimesh commands.
-Blender uses its own bundled Python — bpy scripts do NOT need the venv.
+The workspace is at /home/tmr/src/learn/golden-tower/ with build123d installed
+in ./venv/. Run `source venv/bin/activate` before any Python commands.
 The GitHub repo is https://github.com/terry-richards/golden-tower (remote: origin).
 ```
 
@@ -82,7 +70,7 @@ new engineer) would onboard:
 |-------|------|---------|
 | **Mission** | `.copilot-instructions.md` §1 | Why we exist — one paragraph |
 | **What to build** | `.copilot-instructions.md` §2 | Product spec with exact numbers |
-| **How to build it** | `.copilot-instructions.md` §3, §9 | Tech stack, Blender patterns |
+| **How to build it** | `.copilot-instructions.md` §3, §9 | Tech stack and code patterns |
 | **Who does what** | `AGENTS.md` | Role definitions with clear boundaries |
 | **How to iterate** | `.copilot-instructions.md` §6 | Cycle, rules, scoring rubric |
 | **When to stop** | `.copilot-instructions.md` §7 | Promotion criteria and deliverables |
@@ -115,44 +103,18 @@ new engineer) would onboard:
    stubs. The architect knows exactly what functions to implement and what the
    expected interface is. No ambiguity about file locations or function signatures.
 
-7. **Visual feedback loop**: Blender's EEVEE renderer produces real 3D renders
-   headlessly. Agents see actual surface quality, pocket depth, and proportions —
-   not wireframe outlines. The .blend files can be opened in Blender's GUI for
-   interactive debugging.
-
-### Why Blender instead of build123d
-
-Previous iterations used build123d (a Python CAD kernel based on OpenCascade).
-The agents couldn't see what they built — matplotlib wireframes were too abstract
-to catch geometry errors. After 3 failed iterations, the project switched to
-Blender because:
-
-- **Real renders**: EEVEE produces photorealistic renders headlessly, so agents
-  can evaluate actual visual quality.
-- **Debuggable booleans**: When a boolean fails, open the .blend file in
-  Blender's GUI to inspect what went wrong.
-- **BMesh**: Low-level mesh API for manifold checks, volume calculation, and
-  programmatic geometry — equivalent to the 3D Print Toolkit.
-- **Cross-sections**: `bpy.ops.mesh.bisect` slices meshes at any plane for
-  internal geometry verification.
-- **Separate Python**: Blender uses its own bundled Python — no dependency
-  conflicts. Geometry scripts use bpy; pytest/trimesh run in the venv.
-
 ### Key prompt engineering patterns used
 
 - **Persona + scope**: Each agent instruction starts with "You are the X Agent"
   and explicitly lists responsibilities and non-responsibilities.
 - **Concrete over abstract**: Instead of "make it printable," the instructions
-  say "overhangs ≤ 55° from vertical, bridges ≤ 40 mm."
+  say "overhangs ≤ 55° from vertical, bridges ≤ 40mm."
 - **Severity taxonomy**: BLOCKER / MAJOR / MINOR gives agents a shared language
   for prioritization without requiring nuanced judgment.
 - **Exit conditions**: "Score ≥ 7.5 with no category below 6" is a bright line,
   not a fuzzy guideline.
 - **Recovery procedures**: §11 tells agents what to do when things break,
   rather than leaving them stuck.
-- **Verified technology**: Every Blender API call in the instructions was tested
-  headlessly on the actual Blender 5.0.1 install. Engine name, STL import/export
-  ops, BMesh analysis, and bisect are all confirmed working.
 
 ## Tips for Running the Swarm
 
@@ -160,30 +122,21 @@ Blender because:
    https://github.com/terry-richards/golden-tower. The swarm pushes
    after every iteration commit: `git push origin main`.
 
-2. **Two Python environments**: Blender scripts use Blender's bundled Python
-   (no activation needed — just `blender --background --python script.py`).
-   Tests and trimesh analysis use the venv (`source venv/bin/activate`).
-   Don't confuse the two.
-
-3. **Review renders after each iteration**: The swarm will pause after each
+2. **Review renders after each iteration**: The swarm will pause after each
    iteration and ask for GO/NO-GO. Look at the PNG files in `exports/renders/`
-   — these are real EEVEE 3D renders, not wireframes. This is your primary
+   — these show orthographic views and cross-sections. This is your primary
    mechanism for catching design errors early.
 
-4. **Open .blend files**: If a render looks off, open the corresponding .blend
-   file from `exports/blend/` in Blender's GUI. You can orbit, zoom, and
-   cross-section interactively.
-
-5. **Monitor the changelog**: `CHANGELOG.md` is the human-readable audit trail.
+3. **Monitor the changelog**: `CHANGELOG.md` is the human-readable audit trail.
    Check it to see what the swarm decided at each iteration.
 
-6. **Intervene via reports**: If you want to nudge the swarm, edit
+4. **Intervene via reports**: If you want to nudge the swarm, edit
    `reports/iteration_summary.md` and add a BLOCKER issue. The orchestrator
    will route it to the appropriate agent.
 
-7. **Adjust parameters**: If the swarm converges on something you don't like,
+5. **Adjust parameters**: If the swarm converges on something you don't like,
    modify `tower_params.py` directly and reset the iteration counter.
 
-8. **Scale up**: To add more agents (e.g., a "botanist" that optimizes pocket
+6. **Scale up**: To add more agents (e.g., a "botanist" that optimizes pocket
    angles for specific plants), add a new section to `AGENTS.md` and reference
    it from the orchestrator's handoff list.

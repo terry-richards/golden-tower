@@ -1,15 +1,12 @@
 """
-Build Tower — Golden Tower (Blender)
-=====================================
-Main build script that generates all tower components, exports STL and
-.blend files, and runs basic mesh validation.
+Build Tower — Golden Tower
+============================
+Main build script that generates all tower components, exports STL/STEP
+files, and validates the geometry.
 
 Usage:
-    blender --background --python build_tower.py
-
-For mesh validation only (standalone Python with trimesh):
     source venv/bin/activate
-    python build_tower.py --validate-only
+    python build_tower.py
 """
 
 import os
@@ -21,54 +18,60 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, os.path.join(PROJECT_ROOT, 'components'))
 
+from build123d import export_stl, export_step
 from tower_params import *
 
 # Output directories
 STL_DIR = os.path.join(PROJECT_ROOT, 'exports', 'stl')
-BLEND_DIR = os.path.join(PROJECT_ROOT, 'exports', 'blend')
+STEP_DIR = os.path.join(PROJECT_ROOT, 'exports', 'step')
 
 os.makedirs(STL_DIR, exist_ok=True)
-os.makedirs(BLEND_DIR, exist_ok=True)
+os.makedirs(STEP_DIR, exist_ok=True)
 
 
 def build_and_export_all():
-    """Build all tower components using Blender and export STL + .blend files."""
-    import bpy
-    import bmesh
-
+    """Build all tower components and export STL/STEP files."""
     results = {}
 
     # ── Standard Segment ──
     print("Building standard segment...")
     t0 = time.time()
-    from components.segment import build_segment, export_segment
+    from components.segment import build_segment
     segment = build_segment()
     dt = time.time() - t0
-    export_segment(segment)
+    export_stl(segment, os.path.join(STL_DIR, 'segment.stl'))
+    export_step(segment, os.path.join(STEP_DIR, 'segment.step'))
+    bb = segment.bounding_box()
+    print(f"  Volume: {segment.volume:.1f} mm³")
+    print(f"  Bbox: {bb.min} to {bb.max}")
     print(f"  Build time: {dt:.1f}s")
     results['segment'] = segment
 
     # ── Top Cap ──
     print("\nBuilding top cap...")
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete()
     t0 = time.time()
-    from components.top_cap import build_top_cap, export_top_cap
+    from components.top_cap import build_top_cap
     top_cap = build_top_cap()
     dt = time.time() - t0
-    export_top_cap(top_cap)
+    export_stl(top_cap, os.path.join(STL_DIR, 'top_cap.stl'))
+    export_step(top_cap, os.path.join(STEP_DIR, 'top_cap.step'))
+    bb = top_cap.bounding_box()
+    print(f"  Volume: {top_cap.volume:.1f} mm³")
+    print(f"  Bbox: {bb.min} to {bb.max}")
     print(f"  Build time: {dt:.1f}s")
     results['top_cap'] = top_cap
 
     # ── Bottom Segment ──
     print("\nBuilding bottom segment...")
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete()
     t0 = time.time()
-    from components.bottom_segment import build_bottom_segment, export_bottom_segment
+    from components.bottom_segment import build_bottom_segment
     bottom = build_bottom_segment()
     dt = time.time() - t0
-    export_bottom_segment(bottom)
+    export_stl(bottom, os.path.join(STL_DIR, 'bottom_segment.stl'))
+    export_step(bottom, os.path.join(STEP_DIR, 'bottom_segment.step'))
+    bb = bottom.bounding_box()
+    print(f"  Volume: {bottom.volume:.1f} mm³")
+    print(f"  Bbox: {bb.min} to {bb.max}")
     print(f"  Build time: {dt:.1f}s")
     results['bottom_segment'] = bottom
 
@@ -77,41 +80,38 @@ def build_and_export_all():
     print("BUILD COMPLETE")
     print("=" * 60)
     stl_files = [f for f in os.listdir(STL_DIR) if f.endswith('.stl')]
-    blend_files = [f for f in os.listdir(BLEND_DIR) if f.endswith('.blend')]
+    step_files = [f for f in os.listdir(STEP_DIR) if f.endswith('.step')]
     print(f"STL files: {len(stl_files)} in {STL_DIR}")
     for f in sorted(stl_files):
         size = os.path.getsize(os.path.join(STL_DIR, f))
         print(f"  {f} ({size / 1024:.1f} KB)")
-    print(f"Blend files: {len(blend_files)} in {BLEND_DIR}")
-    for f in sorted(blend_files):
-        size = os.path.getsize(os.path.join(BLEND_DIR, f))
+    print(f"STEP files: {len(step_files)} in {STEP_DIR}")
+    for f in sorted(step_files):
+        size = os.path.getsize(os.path.join(STEP_DIR, f))
         print(f"  {f} ({size / 1024:.1f} KB)")
 
     return results
 
 
 def validate_meshes():
-    """Run basic mesh validation on all exported STLs using trimesh.
+    """Run basic mesh validation on all exported STLs.
 
-    This runs in standalone Python (not Blender) — requires the venv.
+    Applies automatic repair for common OCC tessellation defects
+    (degenerate triangles at sphere poles, etc.) before checking.
     """
     import trimesh
     import numpy as np
     print("\n" + "=" * 60)
-    print("MESH VALIDATION (trimesh)")
+    print("MESH VALIDATION")
     print("=" * 60)
 
     stl_files = [f for f in os.listdir(STL_DIR) if f.endswith('.stl')]
-    if not stl_files:
-        print("  No STL files found.")
-        return True
-
     all_valid = True
     for f in sorted(stl_files):
         path = os.path.join(STL_DIR, f)
         mesh = trimesh.load(path)
 
-        # Auto-repair: remove degenerate faces
+        # Auto-repair: remove degenerate faces (OCC sphere-pole bug)
         degen = [fi for fi, face in enumerate(mesh.faces)
                  if face[0] == face[1] or face[1] == face[2] or face[0] == face[2]]
         if degen:
@@ -122,7 +122,7 @@ def validate_meshes():
             mesh.remove_unreferenced_vertices()
             trimesh.repair.fill_holes(mesh)
             trimesh.repair.fix_normals(mesh)
-            mesh.export(path)
+            mesh.export(path)  # overwrite with repaired mesh
 
         wt = mesh.is_watertight
         vol = mesh.volume
@@ -138,12 +138,10 @@ def validate_meshes():
 
 
 if __name__ == "__main__":
-    if '--validate-only' in sys.argv:
-        # Standalone Python mode — just validate existing STLs with trimesh
-        valid = validate_meshes()
-        sys.exit(0 if valid else 1)
+    results = build_and_export_all()
+    valid = validate_meshes()
+    if not valid:
+        print("\nWARNING: Some meshes are not watertight!")
+        sys.exit(1)
     else:
-        # Blender mode — build everything then validate
-        results = build_and_export_all()
-        print("\nBuild complete. Run trimesh validation with:")
-        print("  source venv/bin/activate && python build_tower.py --validate-only")
+        print("\nAll meshes valid.")
