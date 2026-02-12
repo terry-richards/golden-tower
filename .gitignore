@@ -1,0 +1,26 @@
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.swp
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# pytest
+.pytest_cache/
+
+# STL reference files (large binary — keep exports/ tracked)
+3-Way_Planting_Module_custom.stl
