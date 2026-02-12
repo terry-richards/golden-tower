@@ -115,6 +115,17 @@ def build_segment() -> Part:
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
                 )
 
+            # Flare cone at pocket-body junction for organic transition
+            # Shifts inward along pocket axis to where pocket exits body wall
+            flare_loc = pocket_loc * Pos(0, 0, -5.0)
+            with Locations([flare_loc]):
+                Cone(
+                    bottom_radius=POCKET_RADIUS + WALL_THICKNESS + 5.0,
+                    top_radius=POCKET_RADIUS + WALL_THICKNESS,
+                    height=12.0,
+                    align=(Align.CENTER, Align.CENTER, Align.CENTER),
+                )
+
             # Lip support flange at the outer (mouth) end of the pocket
             lip_z_local = POCKET_DEPTH / 2 - NET_CUP_LIP_HEIGHT / 2
             lip_loc = pocket_loc * Pos(0, 0, lip_z_local)
@@ -186,6 +197,28 @@ def build_segment() -> Part:
                 Cylinder(
                     radius=NET_CUP_LIP_OD / 2,
                     height=NET_CUP_LIP_HEIGHT,
+                    align=(Align.CENTER, Align.CENTER, Align.CENTER),
+                    mode=Mode.SUBTRACT,
+                )
+
+        # 11. Drip tray drain channels (3 radial grooves toward center)
+        ch_r_inner = SUPPLY_TUBE_OD / 2 + 2.0    # 18mm
+        ch_r_outer = SEGMENT_OUTER_RADIUS - WALL_THICKNESS - 2.0  # 76mm
+        ch_r_mid = (ch_r_inner + ch_r_outer) / 2
+        ch_length = ch_r_outer - ch_r_inner
+        ch_depth = DRIP_TRAY_DEPTH - 2.0  # leave 2mm floor
+
+        for k in range(3):
+            ch_angle_deg = k * 120.0
+            ch_angle_rad = math.radians(ch_angle_deg)
+            ch_x = ch_r_mid * math.cos(ch_angle_rad)
+            ch_y = ch_r_mid * math.sin(ch_angle_rad)
+
+            with Locations([Pos(ch_x, ch_y, DRIP_TRAY_DEPTH / 2) * Rot(0, 0, ch_angle_deg)]):
+                Box(
+                    ch_length,
+                    DRIP_TRAY_DRAIN_WIDTH,
+                    ch_depth,
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
                     mode=Mode.SUBTRACT,
                 )

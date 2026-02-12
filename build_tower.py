@@ -94,8 +94,13 @@ def build_and_export_all():
 
 
 def validate_meshes():
-    """Run basic mesh validation on all exported STLs."""
+    """Run basic mesh validation on all exported STLs.
+
+    Applies automatic repair for common OCC tessellation defects
+    (degenerate triangles at sphere poles, etc.) before checking.
+    """
     import trimesh
+    import numpy as np
     print("\n" + "=" * 60)
     print("MESH VALIDATION")
     print("=" * 60)
@@ -105,14 +110,29 @@ def validate_meshes():
     for f in sorted(stl_files):
         path = os.path.join(STL_DIR, f)
         mesh = trimesh.load(path)
+
+        # Auto-repair: remove degenerate faces (OCC sphere-pole bug)
+        degen = [fi for fi, face in enumerate(mesh.faces)
+                 if face[0] == face[1] or face[1] == face[2] or face[0] == face[2]]
+        if degen:
+            mask = np.ones(len(mesh.faces), dtype=bool)
+            for fi in degen:
+                mask[fi] = False
+            mesh.update_faces(mask)
+            mesh.remove_unreferenced_vertices()
+            trimesh.repair.fill_holes(mesh)
+            trimesh.repair.fix_normals(mesh)
+            mesh.export(path)  # overwrite with repaired mesh
+
         wt = mesh.is_watertight
         vol = mesh.volume
         ext = mesh.bounding_box.extents
         status = "OK" if wt else "FAIL"
+        repaired = f" (repaired {len(degen)} degen faces)" if degen else ""
         if not wt:
             all_valid = False
         print(f"  {f}: watertight={status}, volume={vol:.0f}mm³, "
-              f"extents=[{ext[0]:.1f} x {ext[1]:.1f} x {ext[2]:.1f}]")
+              f"extents=[{ext[0]:.1f} x {ext[1]:.1f} x {ext[2]:.1f}]{repaired}")
 
     return all_valid
 

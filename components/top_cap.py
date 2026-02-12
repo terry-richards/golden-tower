@@ -37,9 +37,12 @@ def build_top_cap() -> Part:
     cone_h = CAP_HEIGHT - WALL_THICKNESS                          # 38 mm
     inner_cone_base_r = cone_base_r - WATER_WALL_THICKNESS        # 77.6 mm
     inner_cone_top_r = max(cone_top_r - WATER_WALL_THICKNESS, 0.5)  # 2.6 mm
-    n_channels = 3
-    channel_length = cap_outer_r - WALL_THICKNESS - tube_hole_r   # 74 mm
-    channel_center_r = tube_hole_r + channel_length / 2           # 51 mm
+    n_channels = 6
+    # Channel inner edge starts 2mm outside tube bore to avoid coincident faces
+    ch_inner_r = tube_hole_r + 2.0                               # 16 mm
+    ch_outer_r = cap_outer_r - WALL_THICKNESS                    # 88 mm
+    channel_length = ch_outer_r - ch_inner_r                     # 72 mm
+    channel_center_r = (ch_inner_r + ch_outer_r) / 2             # 52 mm
 
     with BuildPart() as cap:
         # ── 1. Base plate ────────────────────────────────────────────
@@ -52,11 +55,12 @@ def build_top_cap() -> Part:
 
         # ── 2. Deflector cone (solid outer) ──────────────────────────
         # Base at z=WALL_THICKNESS (r=80), apex at z=CAP_HEIGHT (r=5)
-        with Locations([Pos(0, 0, WALL_THICKNESS)]):
+        # Extended 1mm into base plate for volumetric overlap
+        with Locations([Pos(0, 0, WALL_THICKNESS - 1.0)]):
             Cone(
                 cone_base_r,
                 cone_top_r,
-                cone_h,
+                cone_h + 1.0,
                 align=(Align.CENTER, Align.CENTER, Align.MIN),
             )
 
@@ -69,7 +73,8 @@ def build_top_cap() -> Part:
 
         # ── 4. Finial dome ───────────────────────────────────────────
         # Hemisphere sitting on the cone apex for aesthetics
-        with Locations([Pos(0, 0, CAP_HEIGHT)]):
+        # Shifted 1mm into cone for volumetric overlap
+        with Locations([Pos(0, 0, CAP_HEIGHT - 1.0)]):
             Sphere(
                 finial_dome_r,
                 arc_size1=0,
@@ -80,18 +85,19 @@ def build_top_cap() -> Part:
         # ── 5. Female interlock socket ───────────────────────────────
         # Below the base plate: two concentric ring walls with an
         # annular groove between them for the male interlock ring.
+        # Extended 1mm above z=0 for volumetric overlap with base plate.
 
         #   Outer socket wall ring (r = socket_outer_r … +WALL_THICKNESS)
         with BuildSketch(Plane.XY.offset(-INTERLOCK_HEIGHT)):
             Circle(socket_outer_r + WALL_THICKNESS)
             Circle(socket_outer_r, mode=Mode.SUBTRACT)
-        extrude(amount=INTERLOCK_HEIGHT)
+        extrude(amount=INTERLOCK_HEIGHT + 1.0)
 
         #   Inner tube wall ring (r = tube_hole_r … socket_inner_r)
         with BuildSketch(Plane.XY.offset(-INTERLOCK_HEIGHT)):
             Circle(socket_inner_r)
             Circle(tube_hole_r, mode=Mode.SUBTRACT)
-        extrude(amount=INTERLOCK_HEIGHT)
+        extrude(amount=INTERLOCK_HEIGHT + 1.0)
 
         # ── SUBTRACTIONS ─────────────────────────────────────────────
 
@@ -116,18 +122,20 @@ def build_top_cap() -> Part:
                 mode=Mode.SUBTRACT,
             )
 
-        # ── 8. Water channels (3 radial grooves) ────────────────────
-        # Cut from top of base plate downward; guide water outward
+        # ── 8. Water channels (6 radial grooves) ────────────────────
+        # Cut from base plate, avoiding coincident faces at plate-cone boundary.
+        # Channels are as deep as the plate minus 0.5mm to keep a thin floor.
+        ch_depth = min(CHANNEL_DEPTH, WALL_THICKNESS - 0.5)
         for i in range(n_channels):
             angle_deg = i * (360.0 / n_channels)
             angle_rad = math.radians(angle_deg)
             cx = channel_center_r * math.cos(angle_rad)
             cy = channel_center_r * math.sin(angle_rad)
-            with Locations([Pos(cx, cy, WALL_THICKNESS - CHANNEL_DEPTH)]):
+            with Locations([Pos(cx, cy, WALL_THICKNESS - ch_depth)]):
                 Box(
                     channel_length,
                     CHANNEL_WIDTH,
-                    CHANNEL_DEPTH,
+                    ch_depth,
                     rotation=(0, 0, angle_deg),
                     align=(Align.CENTER, Align.CENTER, Align.MIN),
                     mode=Mode.SUBTRACT,
