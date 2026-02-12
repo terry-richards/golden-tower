@@ -8,7 +8,7 @@ Includes:
 - Integrated central supply tube section (not a separate component)
 - Integrated drip tray / catch plate for overflow capture
 - Male (top) and female (bottom) interlock geometry
-- Clean outer body (no accessory notches)
+- Clean outer body between pockets (no accessory notches)
 """
 
 # TODO: Architect Agent — implement initial geometry

@@ -30,7 +30,8 @@ INTERLOCK_ROTATION_DEG = (NODES_PER_SEGMENT * GOLDEN_ANGLE_DEG) % 360  # ≈ 52.
 # Vertical pitch per node within a segment — each pocket at a different height!
 NODE_VERTICAL_PITCH = SEGMENT_HEIGHT / NODES_PER_SEGMENT  # 66.7 mm
 
-# Outer body style: clean — no accessory notches or grip features on exterior
+# Outer body style: clean between pockets — no accessory notches or grip features
+# (planting pocket protrusions are integral and expected)
 OUTER_BODY_STYLE = "clean"
 
 # ─── Integrated Supply Tube ──────────────────────────────────────────

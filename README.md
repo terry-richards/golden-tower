@@ -22,7 +22,7 @@ python build_tower.py
 - **Top cap** deflects water outward and down through the pocket spiral
 - **Integrated drip trays** in each segment catch overflow and route it downward
 - **Bottom segment** connects to a pump via standard quick-disconnect
-- **Clean outer body** — no accessory notches or grip features
+- **Clean outer body** — no accessory notches or grip features between pockets
 
 ## Design Philosophy
 

@@ -81,8 +81,9 @@ Your responsibilities:
    separate central tube component).
 6. Design the **integrated drip tray** that catches overflow and routes it
    downward.
-7. Keep the **outer body clean** — no accessory notches, grip textures, or
-   external alignment features.
+7. Keep the **outer body clean between pockets** — no accessory notches, grip
+   textures, or external alignment features. Planting pocket protrusions are
+   expected and integral to the design.
 8. Design the interlock mechanism that enforces correct rotational alignment.
 9. When you receive feedback from other agents, modify the parametric model
    to address their concerns while preserving golden-angle accuracy.
@@ -97,7 +98,7 @@ Key design constraints:
 - Integrated supply tube in every segment (no separate tube component)
 - Integrated drip tray in every segment
 - Pockets tilted 15-25° outward
-- Clean, smooth outer body
+- Clean, smooth outer body between pocket protrusions
 - All parts must be printable without supports
 
 Use build123d (already installed in venv). Visualize with `ocp_vscode.show()`.
