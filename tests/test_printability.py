@@ -49,9 +49,9 @@ class TestWallThickness:
         )
 
     def test_central_tube_wall(self):
-        """Central tube wall must meet minimum thickness."""
-        assert CENTRAL_TUBE_WALL >= WALL_THICKNESS, (
-            f"Tube wall {CENTRAL_TUBE_WALL}mm < min {WALL_THICKNESS}mm"
+        """Integrated supply tube wall must meet minimum thickness."""
+        assert SUPPLY_TUBE_WALL >= WALL_THICKNESS, (
+            f"Tube wall {SUPPLY_TUBE_WALL}mm < min {WALL_THICKNESS}mm"
         )
 
 
@@ -66,9 +66,9 @@ class TestParametricConsistency:
         )
 
     def test_pocket_clears_tube(self):
-        """Pocket inner edge must clear the central tube."""
+        """Pocket inner edge must clear the integrated supply tube."""
         pocket_inner_edge = POCKET_RADIAL_OFFSET - POCKET_RADIUS
-        tube_clearance = CENTRAL_TUBE_OD / 2 + WALL_THICKNESS
+        tube_clearance = SUPPLY_TUBE_OD / 2 + WALL_THICKNESS
         assert pocket_inner_edge >= tube_clearance, (
             f"Pocket inner edge at {pocket_inner_edge}mm, "
             f"tube clearance needs {tube_clearance}mm"

@@ -17,27 +17,41 @@ GOLDEN_ANGLE_RAD = math.radians(GOLDEN_ANGLE_DEG)
 
 # ─── Segment Geometry ────────────────────────────────────────────────
 NODES_PER_SEGMENT = 3
-SEGMENT_HEIGHT = 120.0          # mm — vertical height of one segment
-SEGMENT_OUTER_DIAMETER = 180.0  # mm — max outer envelope diameter
+SEGMENT_HEIGHT = 200.0          # mm — tall enough for 3 pockets to spiral upward visibly
+SEGMENT_OUTER_DIAMETER = 160.0  # mm — max outer envelope diameter
 SEGMENT_OUTER_RADIUS = SEGMENT_OUTER_DIAMETER / 2
+
+# Height:width ratio — must be ≥ 1.0 for pleasing upward sweep
+SEGMENT_HW_RATIO = SEGMENT_HEIGHT / SEGMENT_OUTER_DIAMETER  # 1.25
 
 # Derived: net rotation between stacked segments
 INTERLOCK_ROTATION_DEG = (NODES_PER_SEGMENT * GOLDEN_ANGLE_DEG) % 360  # ≈ 52.524°
 
-# Vertical pitch per node within a segment
-NODE_VERTICAL_PITCH = SEGMENT_HEIGHT / NODES_PER_SEGMENT  # 40.0 mm
+# Vertical pitch per node within a segment — each pocket at a different height!
+NODE_VERTICAL_PITCH = SEGMENT_HEIGHT / NODES_PER_SEGMENT  # 66.7 mm
 
-# ─── Central Tube ────────────────────────────────────────────────────
-CENTRAL_TUBE_OD = 32.0          # mm — outer diameter
-CENTRAL_TUBE_ID = 28.0          # mm — inner diameter
-CENTRAL_TUBE_WALL = (CENTRAL_TUBE_OD - CENTRAL_TUBE_ID) / 2  # 2.0 mm
+# Outer body style: clean — no accessory notches or grip features on exterior
+OUTER_BODY_STYLE = "clean"
+
+# ─── Integrated Supply Tube ──────────────────────────────────────────
+# The supply tube is INTEGRATED into each segment body (not a separate part).
+# Each segment contains a tube section that aligns with the one above/below.
+SUPPLY_TUBE_OD = 32.0           # mm — outer diameter
+SUPPLY_TUBE_ID = 28.0           # mm — inner diameter
+SUPPLY_TUBE_WALL = (SUPPLY_TUBE_OD - SUPPLY_TUBE_ID) / 2  # 2.0 mm
 
 # ─── Planting Pocket ─────────────────────────────────────────────────
 POCKET_DIAMETER = 52.0          # mm — sized for 2" (50mm) net cup + clearance
 POCKET_RADIUS = POCKET_DIAMETER / 2
 POCKET_TILT_ANGLE = 20.0        # degrees from vertical (outward tilt)
 POCKET_DEPTH = 45.0             # mm — depth of pocket
-POCKET_RADIAL_OFFSET = 55.0     # mm — center of pocket from tower axis
+POCKET_RADIAL_OFFSET = 50.0     # mm — center of pocket from tower axis
+
+# ─── Integrated Drip Tray ─────────────────────────────────────────
+# Built into each segment body; catches overflow and routes it downward
+DRIP_TRAY_DEPTH = 5.0           # mm — depth of the catch basin
+DRIP_TRAY_SLOPE = 3.0           # degrees — slope toward drain channel
+DRIP_TRAY_DRAIN_WIDTH = 6.0     # mm — width of drain channel to next level
 
 # ─── Wall Thickness ──────────────────────────────────────────────────
 WALL_THICKNESS = 2.0            # mm — minimum wall thickness (5 perimeters × 0.4mm)
@@ -86,6 +100,11 @@ TOTAL_TOWER_HEIGHT = (
     CAP_HEIGHT +
     TARGET_SEGMENT_COUNT * SEGMENT_HEIGHT +
     INTERLOCK_HEIGHT  # bottom attachment
+)
+
+# Height:width ratio must be >= 1.0 for the upward spiral to read clearly
+assert SEGMENT_HW_RATIO >= 1.0, (
+    f"Segment H:W ratio {SEGMENT_HW_RATIO:.2f} < 1.0 — pockets won't spiral upward visually"
 )
 
 # ─── O-Ring Specifications (AS568) ────────────────────────────────────

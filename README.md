@@ -16,10 +16,13 @@ python build_tower.py
 ## Architecture
 
 - **Segments** stack and interlock, each rotated 52.524° from the one below
-- **3 planting pockets** per segment at golden-angle spacing
-- **Central tube** carries nutrient solution up to the **top cap**
+- **3 planting pockets** per segment at golden-angle spacing, **spiraling upward**
+  (each pocket at a different height within the segment)
+- **Integrated supply tube** built into each segment carries nutrient solution up
 - **Top cap** deflects water outward and down through the pocket spiral
+- **Integrated drip trays** in each segment catch overflow and route it downward
 - **Bottom segment** connects to a pump via standard quick-disconnect
+- **Clean outer body** — no accessory notches or grip features
 
 ## Design Philosophy
 
@@ -44,10 +47,9 @@ it's the same strategy plants evolved over millions of years.
 
 | Item | Qty | Spec |
 |---|---|---|
-| Standard Segment (3D printed) | 8 | PETG, ~3hr each |
-| Bottom Segment (3D printed) | 1 | PETG, ~4hr |
+| Standard Segment (3D printed) | 8 | PETG, ~4hr each |
+| Bottom Segment (3D printed) | 1 | PETG, ~5hr |
 | Top Cap (3D printed) | 1 | PETG, ~2hr |
-| Central Tube | 1 | 28mm ID silicone or printed |
 | 2" Net Cups | 24 | Standard hydroponic |
 | O-rings (AS568-228) | 8 | Inter-segment seals |
 | 3/8" Quick-Disconnect | 1 | Garden hose QD |
@@ -58,11 +60,10 @@ it's the same strategy plants evolved over millions of years.
 
 1. Attach QD fitting to bottom segment
 2. Place bottom segment on reservoir lid
-3. Insert central tube through bottom segment
-4. Stack standard segments, rotating each to lock
-5. Place top cap
-6. Insert net cups with growing medium
-7. Connect pump and fill reservoir
+3. Stack standard segments, rotating each to lock (supply tube aligns automatically)
+4. Place top cap
+5. Insert net cups with growing medium
+6. Connect pump and fill reservoir
 
 ## License
 
