@@ -38,8 +38,8 @@ OUTER_BODY_STYLE = "clean"
 # The supply tube is INTEGRATED into each segment body (not a separate part).
 # Each segment contains a tube section that aligns with the one above/below.
 SUPPLY_TUBE_OD = 32.0           # mm — outer diameter
-SUPPLY_TUBE_ID = 28.0           # mm — inner diameter
-SUPPLY_TUBE_WALL = (SUPPLY_TUBE_OD - SUPPLY_TUBE_ID) / 2  # 2.0 mm
+SUPPLY_TUBE_ID = 27.2           # mm — inner diameter (gives 2.4mm wall for water contact)
+SUPPLY_TUBE_WALL = (SUPPLY_TUBE_OD - SUPPLY_TUBE_ID) / 2  # 2.4 mm
 
 # ─── Planting Pocket ─────────────────────────────────────────────────
 POCKET_DIAMETER = 52.0          # mm — sized for 2" (50mm) net cup + clearance
@@ -63,6 +63,15 @@ INTERLOCK_HEIGHT = 10.0         # mm — vertical engagement depth
 INTERLOCK_CLEARANCE = 0.3       # mm — gap for printer tolerance
 INTERLOCK_KEY_WIDTH = 8.0       # mm — width of alignment key
 INTERLOCK_KEY_DEPTH = 3.0       # mm — depth of alignment key slot
+
+# Male ring support chamfer — ensures printable transition at body top
+MALE_RING_OR = 29.0             # mm — outer radius of male interlock ring
+MALE_RING_CHAMFER_H = 10.0     # mm — height of support cone below male ring
+# Overhang: arctan((MALE_RING_OR - SUPPLY_TUBE_OD/2) / CHAMFER_H) = 52.4°
+
+# Drip tray drain through-holes — connect tray to segment below
+DRAIN_HOLE_DIAMETER = 8.0       # mm — diameter of each drain through-hole
+DRAIN_HOLE_RADIAL_POS = 35.0   # mm — radial position (just outside female bore)
 
 # ─── Water Channels ──────────────────────────────────────────────────
 CHANNEL_WIDTH = 8.0             # mm

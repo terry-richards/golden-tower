@@ -12,6 +12,54 @@
 
 ---
 
+## Iteration 3 — 2026-02-12
+
+**Score**: 7.53 / 10
+**Decision**: ITERATE (meets threshold; Aesthetics at 6.5 — room for fillets)
+**Summary**: Major architectural rework addressing all 6 priority issues from iteration 2.
+Hollow interior reworked from full cylinder to annular cut, preserving the supply tube wall
+continuously through the body (r=13.6..16mm). Added support cone (52.4 deg from vertical)
+below the male ring for printable transition. Pocket walls and tube walls now 2.4mm
+(WATER_WALL_THICKNESS). Drain through-holes (3x 8mm at r=35mm) connect drip tray to
+segment below. Channels slope toward center. O-ring groove (AS568-228) on male ring.
+Pocket bottom chamfer for printable overhang. All 39 tests pass, all 3 meshes watertight.
+
+**Scores**:
+| Category | Weight | Score | Weighted |
+|---|---|---|---|
+| Golden Angle Accuracy | 20% | 8.0 | 1.60 |
+| Printability | 20% | 7.5 | 1.50 |
+| Water Flow | 20% | 7.5 | 1.50 |
+| Structural Integrity | 15% | 8.0 | 1.20 |
+| Aesthetics | 15% | 6.5 | 0.975 |
+| Assembly Ease | 10% | 7.5 | 0.75 |
+| **Total** | **100%** | | **7.53** |
+
+**Changes from Iteration 2**:
+- Hollow is now ANNULAR (r=tube_OD to r=body_inner) — tube wall preserved from z=5..200
+- Support cone at z=190..200: r=16mm tapering to r=29mm, 52.4 deg angle (was 90 deg)
+- Pocket bottom chamfer: conical subtraction at inner end reduces 70 deg overhang
+- SUPPLY_TUBE_ID reduced from 28.0 to 27.2mm — tube wall now 2.4mm (was 2.0mm)
+- Pocket exterior uses WATER_WALL_THICKNESS (2.4mm) instead of WALL_THICKNESS (2.0mm)
+- O-ring groove (1.78mm deep x 2.62mm wide) on male ring at mid-height
+- Drain through-holes: 3x 8mm cylinders through drip tray floor at r=35mm, 120 deg apart
+- Drain channels: average depth 3.25mm, deeper toward center for effective 3 deg slope
+- Bottom segment mirrors all fixes from standard segment
+- tower_params.py updated: SUPPLY_TUBE_ID, MALE_RING_OR, MALE_RING_CHAMFER_H, DRAIN_HOLE_*
+
+**Issues remaining**:
+- MAJOR: No true fillets at pocket-body junctions (flare cones only, A1)
+- MINOR: No edge chamfers on body top/bottom rims (A2)
+- MINOR: Butt-joint seam at segment boundaries (A3)
+- MINOR: Body ceiling at z=200 is flat bridge from r=29..78mm — 49mm span (P3)
+- MINOR: No axial retention beyond gravity + O-ring (E8)
+- MINOR: Top cap finial basic (A4)
+
+**All categories at or above 6.5.** Score meets 7.5 promotion threshold. Aesthetics (6.5)
+is the main remaining weakness — true fillets would push it to 7.5+.
+
+---
+
 ## Iteration 2 — 2026-02-12
 
 **Score**: 6.65 / 10

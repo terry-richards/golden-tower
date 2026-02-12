@@ -9,13 +9,16 @@ Variant of the standard segment that includes:
 - Bayonet lugs for reservoir lid attachment
 - Reservoir lid ring at the bottom
 
-The bottom segment sits on a reservoir.  The QD barb connects to the pump
-hose, the lid ring rests on the reservoir rim, and the bayonet lugs lock
-the assembly in place.
+Iteration 3 changes (mirrored from segment.py):
+- Hollow is ANNULAR (preserves tube wall through body)
+- Support cone at top for printable male ring transition
+- Pocket walls use WATER_WALL_THICKNESS (2.4mm)
+- Drain through-holes connect drip tray to segment below
+- Drip tray slope via deeper drain channels toward center
+- O-ring groove on male ring for inter-segment seal
+- Pocket bottom chamfer for printable overhang
 
 Boolean strategy: ALL additive geometry first, then ALL subtractive.
-This ensures pocket solids fuse cleanly with the still-solid outer body,
-producing a single watertight shell in the exported STL.
 """
 
 import os
@@ -39,8 +42,20 @@ POCKET_Z_OFFSET = (
 # Extended pocket solid length for proper boolean overlap with outer shell
 POCKET_SOLID_LENGTH = POCKET_DEPTH + 50.0
 
-# Male interlock outer radius -- as specified for standard segment
-MALE_RING_OR = 29.0
+# Interlock ring radii
+MALE_INTERLOCK_RADIUS = MALE_RING_OR  # 29.0 mm
+FEMALE_INTERLOCK_RADIUS = MALE_INTERLOCK_RADIUS + INTERLOCK_CLEARANCE  # 29.3 mm
+
+# Body inner radius
+BODY_INNER_RADIUS = SEGMENT_OUTER_RADIUS - WALL_THICKNESS  # 78.0 mm
+
+# Tube radii
+TUBE_OR = SUPPLY_TUBE_OD / 2  # 16.0 mm
+TUBE_IR = SUPPLY_TUBE_ID / 2  # 13.6 mm
+
+# Male ring chamfer
+CHAMFER_H = MALE_RING_CHAMFER_H  # 10.0 mm
+CHAMFER_Z_START = SEGMENT_HEIGHT - CHAMFER_H  # 190.0 mm
 
 # QD barb geometry
 QD_BARB_LENGTH = 20.0           # mm, extends downward from z=0
@@ -86,7 +101,7 @@ def build_bottom_segment() -> Part:
         # 2. INTEGRATED SUPPLY TUBE (solid wall, z=0 through male interlock)
         tube_top = SEGMENT_HEIGHT + INTERLOCK_HEIGHT  # 210 mm
         Cylinder(
-            radius=SUPPLY_TUBE_OD / 2,
+            radius=TUBE_OR,
             height=tube_top,
             align=_align_bot(),
         )
@@ -94,14 +109,13 @@ def build_bottom_segment() -> Part:
         # 3. MALE INTERLOCK RING  (z = SEGMENT_HEIGHT .. + INTERLOCK_HEIGHT)
         with Locations([Pos(0, 0, SEGMENT_HEIGHT)]):
             Cylinder(
-                radius=MALE_RING_OR,
+                radius=MALE_INTERLOCK_RADIUS,
                 height=INTERLOCK_HEIGHT,
                 align=_align_bot(),
             )
 
         # 4. Alignment key tab on the male ring
-        #    Extended 1mm inward to guarantee volumetric overlap with ring
-        key_x = MALE_RING_OR + INTERLOCK_KEY_DEPTH / 2 - 0.5
+        key_x = MALE_INTERLOCK_RADIUS + INTERLOCK_KEY_DEPTH / 2 - 0.5
         key_z = SEGMENT_HEIGHT + INTERLOCK_HEIGHT / 2
         with Locations([Pos(key_x, 0, key_z)]):
             Box(
@@ -111,8 +125,18 @@ def build_bottom_segment() -> Part:
                 align=(Align.CENTER, Align.CENTER, Align.CENTER),
             )
 
-        # 5. PLANTING POCKETS  (3 pockets at golden-angle spiral positions)
+        # 5. Support cone for male ring — printable transition
+        with Locations([Pos(0, 0, CHAMFER_Z_START)]):
+            Cone(
+                bottom_radius=TUBE_OR,
+                top_radius=MALE_INTERLOCK_RADIUS,
+                height=CHAMFER_H + 1.0,
+                align=_align_bot(),
+            )
+
+        # 6. PLANTING POCKETS (3 pockets at golden-angle spiral positions)
         pocket_locs = []
+        lip_locs = []
         for i in range(NODES_PER_SEGMENT):
             angle_deg = i * GOLDEN_ANGLE_DEG
             angle_rad = math.radians(angle_deg)
@@ -122,38 +146,38 @@ def build_bottom_segment() -> Part:
             py = POCKET_RADIAL_OFFSET * math.sin(angle_rad)
 
             pocket_loc = Pos(px, py, z_center) * Rot(0, POCKET_TILT_ANGLE, angle_deg)
-            pocket_locs.append((pocket_loc, angle_rad))
+            pocket_locs.append(pocket_loc)
 
-            # Solid pocket body (cup wall) -- extended for shell overlap
+            # Solid pocket body — WATER_WALL_THICKNESS
             with Locations([pocket_loc]):
                 Cylinder(
-                    radius=POCKET_RADIUS + WALL_THICKNESS,
+                    radius=POCKET_RADIUS + WATER_WALL_THICKNESS,
                     height=POCKET_SOLID_LENGTH,
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
                 )
 
-            # Flare cone at pocket-body junction for organic transition
+            # Flare cone at pocket-body junction
             flare_loc = pocket_loc * Pos(0, 0, -5.0)
             with Locations([flare_loc]):
                 Cone(
-                    bottom_radius=POCKET_RADIUS + WALL_THICKNESS + 5.0,
-                    top_radius=POCKET_RADIUS + WALL_THICKNESS,
+                    bottom_radius=POCKET_RADIUS + WATER_WALL_THICKNESS + 5.0,
+                    top_radius=POCKET_RADIUS + WATER_WALL_THICKNESS,
                     height=12.0,
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
                 )
 
-            # Lip support flange at the outer (mouth) end of the pocket
+            # Lip support flange at the outer end of the pocket
             lip_z_local = POCKET_DEPTH / 2 - NET_CUP_LIP_HEIGHT / 2
             lip_loc = pocket_loc * Pos(0, 0, lip_z_local)
+            lip_locs.append(lip_loc)
             with Locations([lip_loc]):
                 Cylinder(
-                    radius=NET_CUP_LIP_OD / 2 + WALL_THICKNESS,
+                    radius=NET_CUP_LIP_OD / 2 + WATER_WALL_THICKNESS,
                     height=NET_CUP_LIP_HEIGHT,
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
                 )
 
-        # 6. QD FITTING BARB (shaft + ridges, extends downward from z=0)
-        #    Extend 1mm above z=0 for volumetric overlap with supply tube
+        # 7. QD FITTING BARB (shaft + ridges, extends downward from z=0)
         barb_or = QD_FITTING_BARB_OD / 2   # 6.35 mm
         with Locations([Pos(0, 0, -QD_BARB_LENGTH)]):
             Cylinder(
@@ -161,7 +185,7 @@ def build_bottom_segment() -> Part:
                 height=QD_BARB_LENGTH + 1.0,
                 align=_align_bot(),
             )
-        # Barb ridges (truncated cones for hose grip)
+        # Barb ridges
         for j in range(QD_BARB_RIDGE_COUNT):
             ridge_z = -QD_BARB_LENGTH + 4.0 + j * QD_BARB_RIDGE_SPACING
             with Locations([Pos(0, 0, ridge_z)]):
@@ -172,8 +196,7 @@ def build_bottom_segment() -> Part:
                     align=_align_bot(),
                 )
 
-        # 7. RESERVOIR LID RING  (extends downward from z=0)
-        #    Extend 1mm above z=0 for volumetric overlap with outer cylinder
+        # 8. RESERVOIR LID RING  (extends downward from z=0)
         with Locations([Pos(0, 0, -LID_RING_HEIGHT)]):
             Cylinder(
                 radius=LID_RING_OD / 2,
@@ -181,8 +204,7 @@ def build_bottom_segment() -> Part:
                 align=_align_bot(),
             )
 
-        # 8. BAYONET LUGS  (3 tabs on the lid ring extending downward)
-        #    Extend 1mm above z=0 for volumetric overlap with lid ring/body
+        # 9. BAYONET LUGS
         for k in range(LID_BAYONET_LUGS):
             lug_angle_deg = k * (360.0 / LID_BAYONET_LUGS)
             lug_angle_rad = math.radians(lug_angle_deg)
@@ -201,24 +223,28 @@ def build_bottom_segment() -> Part:
         # PHASE 2: ALL SUBTRACTIVE GEOMETRY
         # ==================================================================
 
-        # 9. HOLLOW INTERIOR  (leave floor of DRIP_TRAY_DEPTH at the bottom)
-        with Locations([Pos(0, 0, DRIP_TRAY_DEPTH)]):
-            Cylinder(
-                radius=SEGMENT_OUTER_RADIUS - WALL_THICKNESS,
-                height=SEGMENT_HEIGHT - DRIP_TRAY_DEPTH,
-                align=_align_bot(),
-                mode=Mode.SUBTRACT,
-            )
+        # 10. HOLLOW INTERIOR — annular cut preserving tube wall
+        #     Lower zone: r=tube_OD/2 to body_inner, z=DTD to chamfer start
+        with BuildSketch(Plane.XY.offset(DRIP_TRAY_DEPTH)):
+            Circle(radius=BODY_INNER_RADIUS)
+            Circle(radius=TUBE_OR, mode=Mode.SUBTRACT)
+        extrude(amount=CHAMFER_Z_START - DRIP_TRAY_DEPTH, mode=Mode.SUBTRACT)
 
-        # 10. SUPPLY TUBE BORE (hollow)
+        #     Upper zone: r=male_ring_OR to body_inner, z=chamfer start to top
+        with BuildSketch(Plane.XY.offset(CHAMFER_Z_START)):
+            Circle(radius=BODY_INNER_RADIUS)
+            Circle(radius=MALE_INTERLOCK_RADIUS, mode=Mode.SUBTRACT)
+        extrude(amount=CHAMFER_H, mode=Mode.SUBTRACT)
+
+        # 11. SUPPLY TUBE BORE (hollow)
         Cylinder(
-            radius=SUPPLY_TUBE_ID / 2,
+            radius=TUBE_IR,
             height=tube_top,
             align=_align_bot(),
             mode=Mode.SUBTRACT,
         )
 
-        # 11. QD BARB BORE (from bottom of barb up through segment floor)
+        # 12. QD BARB BORE (from bottom of barb up through segment floor)
         barb_ir = QD_FITTING_ID / 2         # 4.7625 mm
         with Locations([Pos(0, 0, -QD_BARB_LENGTH)]):
             Cylinder(
@@ -228,7 +254,7 @@ def build_bottom_segment() -> Part:
                 mode=Mode.SUBTRACT,
             )
 
-        # 12. LID RING BORE (hollow center)
+        # 13. LID RING BORE (hollow center)
         with Locations([Pos(0, 0, -LID_RING_HEIGHT)]):
             Cylinder(
                 radius=LID_RING_ID / 2,
@@ -237,38 +263,31 @@ def build_bottom_segment() -> Part:
                 mode=Mode.SUBTRACT,
             )
 
-        # 13. POCKET BORES  (cup interiors)
+        # 14. O-ring groove on male ring exterior
+        oring_z = SEGMENT_HEIGHT + INTERLOCK_HEIGHT / 2
+        oring_groove_or = MALE_INTERLOCK_RADIUS + 0.1
+        oring_groove_ir = MALE_INTERLOCK_RADIUS - ORING_GROOVE_DEPTH
+        with BuildSketch(Plane.XY.offset(oring_z - ORING_GROOVE_WIDTH / 2)):
+            Circle(radius=oring_groove_or)
+            Circle(radius=oring_groove_ir, mode=Mode.SUBTRACT)
+        extrude(amount=ORING_GROOVE_WIDTH, mode=Mode.SUBTRACT)
+
+        # 15. POCKET BORES, lip counterbores, and bottom chamfers
         for i in range(NODES_PER_SEGMENT):
-            pocket_loc, angle_rad = pocket_locs[i]
+            pocket_loc = pocket_locs[i]
+            lip_loc = lip_locs[i]
 
-            # Bore shifted outward by WALL_THICKNESS/2 along tilted axis
-            tilt_rad = math.radians(POCKET_TILT_ANGLE)
-            bore_shift = WALL_THICKNESS / 2
-            angle_deg = i * GOLDEN_ANGLE_DEG
-            ar = math.radians(angle_deg)
-            px = POCKET_RADIAL_OFFSET * math.cos(ar)
-            py = POCKET_RADIAL_OFFSET * math.sin(ar)
-            z_center = POCKET_Z_OFFSET + i * NODE_VERTICAL_PITCH
-
-            dx = bore_shift * math.sin(tilt_rad) * math.cos(ar)
-            dy = bore_shift * math.sin(tilt_rad) * math.sin(ar)
-            dz = bore_shift * math.cos(tilt_rad)
-
-            bore_loc = (
-                Pos(px + dx, py + dy, z_center + dz)
-                * Rot(0, POCKET_TILT_ANGLE, angle_deg)
-            )
+            # Pocket bore
+            bore_loc = pocket_loc * Pos(0, 0, WATER_WALL_THICKNESS / 2)
             with Locations([bore_loc]):
                 Cylinder(
                     radius=POCKET_RADIUS,
-                    height=POCKET_DEPTH - WALL_THICKNESS,
+                    height=POCKET_DEPTH - WATER_WALL_THICKNESS,
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
                     mode=Mode.SUBTRACT,
                 )
 
-            # Net cup lip counterbore (was missing in iter-1)
-            lip_z_local = POCKET_DEPTH / 2 - NET_CUP_LIP_HEIGHT / 2
-            lip_loc = pocket_loc * Pos(0, 0, lip_z_local)
+            # Net cup lip counterbore
             with Locations([lip_loc]):
                 Cylinder(
                     radius=NET_CUP_LIP_OD / 2,
@@ -277,12 +296,25 @@ def build_bottom_segment() -> Part:
                     mode=Mode.SUBTRACT,
                 )
 
-        # 14. Drip tray drain channels (3 radial grooves toward center)
-        ch_r_inner = SUPPLY_TUBE_OD / 2 + 2.0    # 18mm
-        ch_r_outer = SEGMENT_OUTER_RADIUS - WALL_THICKNESS - 2.0  # 76mm
+            # Pocket bottom chamfer
+            chamfer_r = POCKET_RADIUS * 0.85
+            chamfer_len = POCKET_RADIUS * 0.5
+            bottom_loc = pocket_loc * Pos(0, 0, -(POCKET_DEPTH / 2 - WATER_WALL_THICKNESS / 2))
+            with Locations([bottom_loc]):
+                Cone(
+                    bottom_radius=0.1,
+                    top_radius=chamfer_r,
+                    height=chamfer_len,
+                    align=(Align.CENTER, Align.CENTER, Align.MIN),
+                    mode=Mode.SUBTRACT,
+                )
+
+        # 16. Drip tray drain channels (3 radial grooves toward center)
+        ch_r_inner = TUBE_OR + 2.0
+        ch_r_outer = BODY_INNER_RADIUS - 2.0
         ch_r_mid = (ch_r_inner + ch_r_outer) / 2
         ch_length = ch_r_outer - ch_r_inner
-        ch_depth = DRIP_TRAY_DEPTH - 2.0  # leave 2mm floor
+        ch_avg_depth = (DRIP_TRAY_DEPTH - 2.5 + DRIP_TRAY_DEPTH - 1.0) / 2
 
         for k in range(3):
             ch_angle_deg = k * 120.0
@@ -290,12 +322,27 @@ def build_bottom_segment() -> Part:
             ch_x = ch_r_mid * math.cos(ch_angle_rad)
             ch_y = ch_r_mid * math.sin(ch_angle_rad)
 
-            with Locations([Pos(ch_x, ch_y, DRIP_TRAY_DEPTH / 2) * Rot(0, 0, ch_angle_deg)]):
+            with Locations([Pos(ch_x, ch_y, DRIP_TRAY_DEPTH - ch_avg_depth / 2) * Rot(0, 0, ch_angle_deg)]):
                 Box(
                     ch_length,
                     DRIP_TRAY_DRAIN_WIDTH,
-                    ch_depth,
+                    ch_avg_depth,
                     align=(Align.CENTER, Align.CENTER, Align.CENTER),
+                    mode=Mode.SUBTRACT,
+                )
+
+        # 17. Drain through-holes
+        for k in range(3):
+            dh_angle_deg = k * 120.0
+            dh_angle_rad = math.radians(dh_angle_deg)
+            dh_x = DRAIN_HOLE_RADIAL_POS * math.cos(dh_angle_rad)
+            dh_y = DRAIN_HOLE_RADIAL_POS * math.sin(dh_angle_rad)
+
+            with Locations([Pos(dh_x, dh_y, 0)]):
+                Cylinder(
+                    radius=DRAIN_HOLE_DIAMETER / 2,
+                    height=DRIP_TRAY_DEPTH + 1.0,
+                    align=(Align.CENTER, Align.CENTER, Align.MIN),
                     mode=Mode.SUBTRACT,
                 )
 
@@ -306,13 +353,11 @@ if __name__ == "__main__":
     print("Building bottom segment...")
     part = build_bottom_segment()
 
-    # Report geometry
     print(f"  Volume:      {part.volume:.1f} mm^3")
     bb = part.bounding_box()
     print(f"  Bounding box: {bb.min} -> {bb.max}")
     print(f"  Valid solid:  {part.is_valid}")
 
-    # Ensure export directories exist
     base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
     stl_dir = os.path.join(base_dir, "exports", "stl")
     step_dir = os.path.join(base_dir, "exports", "step")

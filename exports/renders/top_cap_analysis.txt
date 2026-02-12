@@ -5,8 +5,8 @@ Bounding Box:
   Y: -90.0 to 90.0 (179.9 mm)
   Z: -10.0 to 47.0 (57.0 mm)
 
-Volume: 65624 mm³ (65.6 cm³)
-Surface Area: 104310 mm²
+Volume: 66011 mm³ (66.0 cm³)
+Surface Area: 104357 mm²
 Watertight: True
 Winding Consistent: True
 Faces: 9938, Vertices: 4959
@@ -22,7 +22,7 @@ Dimensional Checks:
   Actual Z span: 57.0 mm
 
 Cross-section areas (solid area at each Z height):
-  Z=-4.3mm (10%): 569.0 mm²
+  Z=-4.3mm (10%): 603.7 mm²
   Z=4.2mm (25%): 1388.0 mm²
   Z=18.5mm (50%): 376.1 mm²
   Z=32.8mm (75%): 228.7 mm²
